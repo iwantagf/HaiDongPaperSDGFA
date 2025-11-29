@@ -8,7 +8,6 @@
 
 #define WITHOUT_NUMPY
 #include "matplotlibcpp/matplotlibcpp.h"
-#include "SGDA.h"
 
 /*
 f(x) = (x1^2 + x2^2 + 3)/(1 + 2x1 + 8x2)
@@ -202,7 +201,7 @@ void plot_x(const vector< vector< vector<double> > > &sol_all, int count, int ma
 
 	plt::xlabel("iteration");
 	plt::ylabel("x(t)");
-	std::map<std::string, std::string> leg_kw;
+	map<string, string> leg_kw;
 	leg_kw["loc"] = "best";
 	plt::legend(leg_kw);
 	plt::show();
