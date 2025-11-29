@@ -202,12 +202,14 @@ void plot_x(const vector< vector< vector<double> > > &sol_all, int count, int ma
 
 	plt::xlabel("iteration");
 	plt::ylabel("x(t)");
-	plt::legend();
+	std::map<std::string, std::string> leg_kw;
+	leg_kw["loc"] = "best";
+	plt::legend(leg_kw);
 	plt::show();
 }
 
 int main() {
-	mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+	mt19937 rng(42);
 	
 	int num = 3;
 	int max_iters = 100;
@@ -237,7 +239,7 @@ int main() {
 		auto t_end = chrono::high_resolution_clock::now();
 		double elapsed_time = chrono::duration<double>(t_end - t_start).count();
 
-		cout << "GDA run " << i << " time: " << elapsed_time << "s, Value of f: " << R.val.back() << " \n";
+		cout << "GDA run " << i + 1 << " time: " << elapsed_time << "s, Value of f: " << R.val.back() << " \n";
 
 		sol_all.push_back(R.res);
 		val_all.push_back(R.val);
