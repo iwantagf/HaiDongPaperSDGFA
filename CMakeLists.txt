@@ -10,7 +10,7 @@ set(CMAKE_PREFIX_PATH "C:/Users/PC/Downloads/libtorch-win-shared-with-deps-2.9.1
 find_package(Torch REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 
-add_executable(SGDA "example1.cpp" "SGDA.h" "example2.cpp")
+add_executable(SGDA "main.cpp" "SGDA.h")
 
 target_include_directories(SGDA PRIVATE
     ${Python3_INCLUDE_DIRS}
