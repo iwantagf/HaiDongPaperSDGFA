@@ -21,61 +21,53 @@
 
 using namespace std;
 namespace example2 {
-	double f(const vector<double>& x) {
-		return (exp(abs(x[1] - 3.0)) - 30.0) / (x[0] * x[0] + x[2] * x[2] + 2.0 * x[3] * x[3] + 4.0);
+	double f(vector<double> x) {
+		return (exp(abs(x[1] - 3)) - 30) / (x[0] * x[0] + x[2] * x[2] + 2 * x[3] * x[3] + 4);
+	}
+	
+	double g1(vector<double> x) {
+		return pow(x[0] + x[2], 3) + 2 * x[3] * x[3] - 10;
 	}
 
-	double g1(const vector<double>& x) {
-		return pow(x[0] + x[2], 3.0) + 2.0 * x[3] * x[3] - 10.0;
+	double g2(vector<double> x) {
+		return pow(x[1] - 1, 2) - 1;
 	}
 
-	double g2(const vector<double>& x) {
-		return pow(x[1] - 1.0, 2.0) - 1.0;
+	double g3(vector<double> x) {
+		return 2 * x[0] + 4 * x[1] + x[2] + 1;
 	}
 
-	double g3(const vector<double>& x) {
-		return 2.0 * x[0] + 4.0 * x[1] + x[2] + 1.0;
-	}
-
-	vector<double> grad_f(const vector<double>& x) {
+	vector<double> grad_f(vector<double> x) {
 		vector<double> res(4, 0.0);
-		double diff = x[1] - 3.0;
-		double absdiff = abs(diff);
-		double N = exp(absdiff) - 30.0;
-		double D = x[0] * x[0] + x[2] * x[2] + 2.0 * x[3] * x[3] + 4.0;
-		double D2 = D * D;
+		double N = exp(abs(x[1] - 3)) - 30;
+		double D = x[0] * x[0] + x[2] * x[2] + 2 * x[3] * x[3] + 4;
 
-		res[0] = -2.0 * x[0] * N / D2;
-
-		double sign = 0.0;
-		if (absdiff > 1e-12)
-			sign = diff / absdiff;
-		res[1] = exp(absdiff) * sign / D;
-
-		res[2] = -2.0 * x[2] * N / D2;
-		res[3] = -4.0 * x[3] * N / D2;
+		res[0] = -2 * x[0] * N / D / D;
+		res[1] = exp(abs(x[1] - 3)) * ((x[1] - 3) / abs(x[1] - 3)) / D;
+		res[2] = -2 * x[2] * N / D / D;
+		res[3] = -4 * x[3] * N / D / D;
 
 		return res;
 	}
 
-	vector<double> grad_g1(const vector<double>& x) {
+	vector<double> grad_g1(vector<double> x) {
 		vector<double> res(4, 0.0);
-		double t = x[0] + x[2];
-		double t2 = t * t;
-		res[0] = 3.0 * t2;
-		res[2] = 3.0 * t2;
-		res[3] = 4.0 * x[3];
+		res[0] = 3 * (x[0] + x[2]) * (x[0] + x[2]);
+		res[2] = 3 * (x[0] + x[2]) * (x[0] + x[2]);
+		res[3] = 4 * x[3];
+
+		return res;
+	}
+	
+	vector<double> grad_g2(vector<double> x) {
+		vector<double> res(4, 0.0);
+		res[1] = 2 * (x[1] - 1);
+
 		return res;
 	}
 
-	vector<double> grad_g2(const vector<double>& x) {
-		vector<double> res(4, 0.0);
-		res[1] = 2.0 * (x[1] - 1.0);
-		return res;
-	}
-
-	vector<double> grad_g3(const vector<double>& x) {
-		vector<double> res = { 2.0, 4.0, 1.0, 0.0 };
+	vector<double> grad_g3(vector<double> x) {
+		vector<double> res = { 2, 4, 1, 0 };
 		return res;
 	}
 
@@ -100,11 +92,11 @@ namespace example2 {
 	template<typename T>
 	double dot(const vector<T>& a, const vector<T>& b) {
 		assert(a.size() == b.size());
-		double res = 0.0;
+		double res = 0;
 		for (size_t i = 0; i < a.size(); ++i)
 			res += a[i] * b[i];
 		return res;
-	}
+	}	
 
 	template<typename T>
 	vector<T> operator * (const double& a, const vector<T>& b) {
@@ -114,9 +106,9 @@ namespace example2 {
 		return res;
 	}
 
-	vector<double> projection(const vector<double>& y, int n, mt19937& rng, int max_iters = 100000, double lr = 0.001, double rho = 5.0) {
+
+	vector<double> projection(const vector<double>& y, int n, mt19937& rng, int max_iters = 30000, double lr = 0.001, double rho = 10.0) {
 		(void)n;
-		(void)rng;
 
 		vector<double> x = y;
 
@@ -125,7 +117,7 @@ namespace example2 {
 			double g1_val = g1(x);
 			double g2_val = g2(x);
 			double g3_val = g3(x);
-
+			
 			vector<double> g1_g = grad_g1(x);
 			vector<double> g2_g = grad_g2(x);
 			vector<double> g3_g = grad_g3(x);
@@ -139,7 +131,6 @@ namespace example2 {
 
 		return x;
 	}
-
 
 	struct RunResult {
 		vector< vector<double> > res;
@@ -230,9 +221,13 @@ namespace example2 {
 		plt::show();
 	}
 
-	void solve() {		
+	void solve() {
+		//cerr << f({-1.0649, 0.4160, -0.5343, 0.0002}) << '\n';
+		
 		mt19937 rng(42);
 		
+		//vector<double> pr = projection({ -1.0649, 0.4160, -0.5343, 0.0002 }, 4, rng);
+
 		int num = 3;
 		int max_iters = 100;
 		//int max_iters1 = 100;
