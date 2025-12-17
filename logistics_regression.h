@@ -240,8 +240,8 @@ namespace regression {
 		return 2.0 * precision * recall / (precision + recall + 1e-12);
 	}
 
-	void logistic_regression(Tensor &X_train, Tensor &y_train, Tensor &X_test, Tensor &y_test) {
-		int epochs = 500;
+	void logistic_regression(Tensor& X_train, Tensor& y_train, Tensor& X_test, Tensor& y_test) {
+		int epochs = 200;
 		int batch_size = 256;
 		double ld0 = 36;
 		double kappa = 0.936;
@@ -255,7 +255,7 @@ namespace regression {
 		y_test = y_test.contiguous().to(device).to(torch::kFloat);
 
 		const long long D = X_train.size(1);
-		
+
 		Tensor w = torch::zeros({ D }, torch::TensorOptions().dtype(torch::kFloat).device(device).requires_grad(true));
 		Tensor b = torch::zeros({ 1 }, torch::TensorOptions().dtype(torch::kFloat).device(device).requires_grad(true));
 
@@ -308,7 +308,7 @@ namespace regression {
 					<< " train_loss=" << train_loss
 					<< " test_loss=" << test_loss
 					<< " train_acc=" << train_acc
-					<< " test_acc=" << test_acc 
+					<< " test_acc=" << test_acc
 					<< "\n";
 			}
 
@@ -316,7 +316,7 @@ namespace regression {
 
 		cout << "Train:\n";
 		double train_f1 = f_measure(X_train, y_train, w, b);
-		
+
 		cout << "Test:\n";
 		double test_f1 = f_measure(X_test, y_test, w, b);
 
