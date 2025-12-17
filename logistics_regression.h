@@ -205,9 +205,9 @@ namespace regression {
     }
 
     History logistic_regression_GDA(Tensor X_train, Tensor y_train, Tensor X_test, Tensor y_test) {
-        int epochs = 200;
+        int epochs = 4000;
 
-        double ld0 = 3.6;
+        double ld0 = 1;
         double kappa = 0.9;
         double sigma = 1e-4;
         double l2 = 1e-2;
@@ -409,7 +409,7 @@ namespace regression {
 
         // Run BOTH methods
         auto hist_gda = logistic_regression_GDA(X_train, y_train, X_test, y_test);
-        auto hist_gd = logistic_regression_gd(X_train, y_train, X_test, y_test, 0.01, 200, 1e-2);
+        auto hist_gd = logistic_regression_gd(X_train, y_train, X_test, y_test, 0.01, 4000, 1e-2);
 
         // Compare plots
         plot_comparison(hist_gd, hist_gda);
