@@ -207,11 +207,10 @@ namespace regression {
     History logistic_regression_GDA(Tensor X_train, Tensor y_train, Tensor X_test, Tensor y_test) {
         int epochs = 4000;
 
-        double ld0 = 1;
-        double kappa = 0.9;
-        double sigma = 1e-4;
-        double l2 = 1e-2;
-        int   max_tries = 10;
+        double ld0 = 3.6;
+        double kappa = 0.75;
+        double sigma = 1e-2;
+        double l2 = 1e-3;
 
         X_train = X_train.contiguous().to(device).to(torch::kFloat);
         y_train = y_train.contiguous().to(device).to(torch::kFloat);
@@ -228,6 +227,8 @@ namespace regression {
         History hist;
         const int log_every = 5;
 
+        int max_tries = 30;
+
         for (int iter = 0; iter < epochs; ++iter) {
             auto loss = bce_logits_full(X_train, y_train, w, b, l2);
             auto grads = torch::autograd::grad({ loss }, { w, b });
@@ -236,6 +237,7 @@ namespace regression {
             auto gb = grads[1].detach();
 
             double gnorm2 = ((gw * gw).sum() + (gb * gb).sum()).item<double>();
+            if (gnorm2 < 1e-18) break;
 
             double lda_try = lda;
             bool ok = false;
@@ -258,7 +260,9 @@ namespace regression {
                 lda_try *= kappa;
             }
 
-            if (!ok) lda *= kappa;
+            if (!ok) {
+                lda *= kappa;
+            }
 
             if (iter % log_every == 0) {
                 double tr_loss = bce_logits_full(X_train, y_train, w, b, l2).item<double>();
@@ -281,10 +285,10 @@ namespace regression {
             }
         }
 
-        std::cout << "Line-search Train:\n";
+        std::cout << "GDA Train:\n";
         double train_f1 = f1_measure(X_train, y_train, w, b);
 
-        std::cout << "Line-search Test:\n";
+        std::cout << "GDA Test:\n";
         double test_f1 = f1_measure(X_test, y_test, w, b);
 
         std::cout << "[GDA Final] train_f1=" << train_f1 << " test_f1=" << test_f1 << "\n";
@@ -292,8 +296,9 @@ namespace regression {
     }
 
 
+
     History logistic_regression_gd(Tensor X_train, Tensor y_train, Tensor X_test, Tensor y_test,
-        double lr = 0.01, int epochs = 200, double l2 = 1e-2) {
+        double lr = 0.01, int epochs = 200, double l2 = 0.001) {
         X_train = X_train.contiguous().to(device).to(torch::kFloat);
         y_train = y_train.contiguous().to(device).to(torch::kFloat);
         X_test = X_test.contiguous().to(device).to(torch::kFloat);
@@ -338,10 +343,10 @@ namespace regression {
             }
         }
 
-        std::cout << "Plain GD Train:\n";
+        std::cout << "GD Train:\n";
         double train_f1 = f1_measure(X_train, y_train, w, b);
 
-        std::cout << "Plain GD Test:\n";
+        std::cout << "GD Test:\n";
         double test_f1 = f1_measure(X_test, y_test, w, b);
 
         std::cout << "[GD Final] train_f1=" << train_f1 << " test_f1=" << test_f1 << "\n";
@@ -354,8 +359,10 @@ namespace regression {
     void plot_comparison(const History& gd, const History& ls) {
         // LOSS
         plt::figure();
-        plt::named_plot("GD", gd.iters, gd.test_loss);
-        plt::named_plot("GDA", ls.iters, ls.test_loss);
+        plt::named_plot("GD test", gd.iters, gd.test_loss);
+        plt::named_plot("GD train", gd.iters, gd.train_loss);
+        plt::named_plot("GDA test", ls.iters, ls.test_loss);
+        plt::named_plot("GDA train", ls.iters, ls.train_loss);
         plt::title("Loss comparison");
         plt::xlabel("Iteration");
         plt::ylabel("BCEWithLogits + L2");
@@ -364,8 +371,10 @@ namespace regression {
 
         // ACC
         plt::figure();
-        plt::named_plot("GD", gd.iters, gd.test_acc);
-        plt::named_plot("GDA", ls.iters, ls.test_acc);
+        plt::named_plot("GD test", gd.iters, gd.test_acc);
+        plt::named_plot("GD train", gd.iters, gd.train_acc);
+        plt::named_plot("GDA test", ls.iters, ls.test_acc);
+        plt::named_plot("GDA train", ls.iters, ls.train_acc);
         plt::title("Accuracy comparison");
         plt::xlabel("Iteration");
         plt::ylabel("Accuracy");
@@ -391,7 +400,7 @@ namespace regression {
         std::cout << df.nrows() << " " << df.ncols() << "\n";
 
         // normalize all feature columns except last (label)
-        for (size_t j = 0; j + 1 < df.ncols(); ++j) {
+        for (size_t j = 1; j + 1 < df.ncols(); ++j) {
             df.normalize_col(df.columns[j]);
         }
 
@@ -399,9 +408,9 @@ namespace regression {
         train_test_split(df.X, train_t, test_t);
         std::cout << "tensor split: " << train_t.sizes() << " " << test_t.sizes() << "\n";
 
-        auto X_train = train_t.index({ torch::indexing::Slice(), torch::indexing::Slice(0, -1) });
+        auto X_train = train_t.index({ torch::indexing::Slice(), torch::indexing::Slice(1, -1) });
         auto y_train = train_t.index({ torch::indexing::Slice(), -1 });
-        auto X_test = test_t.index({ torch::indexing::Slice(), torch::indexing::Slice(0, -1) });
+        auto X_test = test_t.index({ torch::indexing::Slice(), torch::indexing::Slice(1, -1) });
         auto y_test = test_t.index({ torch::indexing::Slice(), -1 });
 
         std::cout << "X_train: " << X_train.sizes() << "\n";
@@ -409,7 +418,7 @@ namespace regression {
 
         // Run BOTH methods
         auto hist_gda = logistic_regression_GDA(X_train, y_train, X_test, y_test);
-        auto hist_gd = logistic_regression_gd(X_train, y_train, X_test, y_test, 0.01, 4000, 1e-2);
+        auto hist_gd = logistic_regression_gd(X_train, y_train, X_test, y_test, 0.01, 4000, 1e-3);
 
         // Compare plots
         plot_comparison(hist_gd, hist_gda);
